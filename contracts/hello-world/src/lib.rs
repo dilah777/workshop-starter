@@ -1,110 +1,56 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Env, String, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol, Vec};
 
-// Struktur data yang akan menyimpan notes
+// 1. Struktur Data Sertifikat (Mirip NFT Metadata)
 #[contracttype]
 #[derive(Clone, Debug)]
-pub struct Note {
-
+pub struct Certificate {
+    pub owner: Address,
+    pub score: u32,
+    pub cid: String, // Tempat naruh CID Pinata kamu
 }
 
-// Storage key untuk data notes
-// const NOTE_DATA: Symbol = symbol_short!("NOTE_DATA");
+// 2. Kunci Storage
+const CERT_DATA: Symbol = symbol_short!("CERT");
 
 #[contract]
-pub struct NotesContract;
+pub struct QuizContract;
 
 #[contractimpl]
-impl NotesContract {
-    // Fungsi untuk mendapatkan semua notes
-    pub fn get_notes(env: Env) -> Vec<Note> {
-        // 1. ambil data notes dari storage
-        
-        return [];
-    }
-
-    // Fungsi untuk membuat note baru
-    pub fn create_note(env: Env, title: String, content: String) -> String {
-        // 1. ambil data notes dari storage
-        
-        // 2. Buat object note baru
-        
-        // 3. tambahkan note baru ke notes lama
-        
-        // 4. simpan notes ke storage
-        
-        return String::from_str(&env, "Notes berhasil ditambahkan");
-    }
-
-    // Fungsi untuk menghapus notes berdasarkan id
-    pub fn delete_note(env: Env, id: u64) -> String {
-        // 1. ambil data notes dari storage 
-
-        // 2. cari index note yang akan dihapus menggunakan perulangan
-
-        return String::from_str(&env, "Notes tidak ditemukan")
-    }
-}
-
-mod test;
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* --- CONTOH SCRIPT ---
-
-pub fn get_notes(env: Env) -> Vec<Note> {
-    // 1. ambil data notes dari storage
-    return env.storage().instance().get(&NOTE_DATA).unwrap_or(Vec::new(&env));
-}
-
-// Fungsi untuk membuat note baru
-pub fn create_note(env: Env, title: String, content: String) -> String {
-    // 1. ambil data notes dari storage
-    let mut notes: Vec<Note> = env.storage().instance().get(&NOTE_DATA).unwrap_or(Vec::new(&env));
-    
-    // 2. Buat object note baru
-    let note = Note {
-        id: env.prng().gen::<u64>(),
-        title: title,
-        content: content,
-    };
-    
-    // 3. tambahkan note baru ke notes lama
-    notes.push_back(note);
-    
-    // 4. simpan notes ke storage
-    env.storage().instance().set(&NOTE_DATA, &notes);
-    
-    return String::from_str(&env, "Notes berhasil ditambahkan");
-}
-
-// Fungsi untuk menghapus notes berdasarkan id
-pub fn delete_note(env: Env, id: u64) -> String {
-    // 1. ambil data notes dari storage 
-    let mut notes: Vec<Note> = env.storage().instance().get(&NOTE_DATA).unwrap_or(Vec::new(&env));
-
-    // 2. cari index note yang akan dihapus menggunakan perulangan
-    for i in 0..notes.len() {
-        if notes.get(i).unwrap().id == id {
-            notes.remove(i);
-
-            env.storage().instance().set(&NOTE_DATA, &notes);
-            return String::from_str(&env, "Berhasil hapus notes");
+impl QuizContract {
+    // Fungsi untuk Klaim Sertifikat (Hanya jika skor >= 3)
+    pub fn claim_certificate(env: Env, user: Address, score: u32, cid: String) -> String {
+        // Cek syarat kelulusan
+        if score < 3 {
+            return String::from_str(&env, "Skor kurang! Belajar lagi ya.");
         }
+
+        // Ambil daftar sertifikat yang sudah ada
+        let mut certs: Vec<Certificate> = env.storage()
+            .instance()
+            .get(&CERT_DATA)
+            .unwrap_or(Vec::new(&env));
+
+        // Buat data sertifikat baru
+        let new_cert = Certificate {
+            owner: user.clone(),
+            score,
+            cid,
+        };
+
+        certs.push_back(new_cert);
+
+        // Simpan ke Blockchain
+        env.storage().instance().set(&CERT_DATA, &certs);
+
+        String::from_str(&env, "Selamat! Sertifikat NFT berhasil dicetak.")
     }
 
-    return String::from_str(&env, "Notes tidak ditemukan")
+    // Fungsi untuk melihat semua orang yang sudah lulus
+    pub fn get_all_certificates(env: Env) -> Vec<Certificate> {
+        env.storage()
+            .instance()
+            .get(&CERT_DATA)
+            .unwrap_or(Vec::new(&env))
+    }
 }
-
-
-*/
