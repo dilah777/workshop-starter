@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "./firebase";
+import { nativeToScVal } from "@stellar/stellar-sdk"; // WAJIB: Untuk konversi data ke format Soroban
 
 // Data soal kuis
 const questions = [
@@ -31,7 +32,8 @@ const questions = [
   }
 ];
 
-export default function Quiz({ userAddress }) {
+// Menangkap "remote control" dari App.jsx
+export default function Quiz({ userAddress, writeContract, txLoading, txError, txSuccess }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
@@ -70,9 +72,16 @@ export default function Quiz({ userAddress }) {
     setIsSaving(false);
   };
 
-  // Fungsi pura-pura klaim NFT untuk presentasi
-  const claimNFT = () => {
-    alert(`Memproses NFT Sertifikat untuk dompet:\n${userAddress}\n\nCID Gambar Kamu:\nipfs://bafkreia32fcmk5a6kraweiyvnbze45azem4ean5eht5yabiofo54pvhp7e\n\nSelamat! Anda telah lulus.`);
+  // --- FUNGSI ASLI KLAIM NFT KE BLOCKCHAIN STELLAR ---
+  const handleMintNFT = async () => {
+    if (!writeContract) return; // Jaga-jaga kalau koneksi kontrak belum siap
+    
+    // Memanggil fungsi 'claim_certificate' di lib.rs kamu
+    await writeContract("claim_certificate", [
+      nativeToScVal(userAddress, { type: "address" }), // Argument 1: Alamat User
+      nativeToScVal(score, { type: "u32" }),           // Argument 2: Skor Kuis
+      nativeToScVal("ipfs://bafkreia32fcmk5a6kraweiyvnbze45azem4ean5eht5yabiofo54pvhp7e", { type: "string" }), // Argument 3: CID Gambar Pinata
+    ]);
   };
 
   return (
@@ -93,9 +102,24 @@ export default function Quiz({ userAddress }) {
           {score >= 3 ? (
             <div style={{ marginTop: "20px", padding: "15px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
               <p style={{ color: "#16a34a", fontWeight: "bold", fontSize: "1.1rem" }}>LULUS! Kamu berhak mendapatkan NFT Sertifikat.</p>
-              <button onClick={claimNFT} style={{ padding: "12px 24px", backgroundColor: "#6366f1", color: "white", borderRadius: "8px", cursor: "pointer", border: "none", fontWeight: "bold", fontSize: "1rem", marginTop: "10px" }}>
-                Klaim NFT Sertifikat Sekarang
-              </button>
+              
+              {/* Tampilan berubah menyesuaikan status transaksi */}
+              {txSuccess ? (
+                <div style={{ background: "#dcfce7", padding: "10px", borderRadius: "8px", color: "#166534", marginTop: "10px", fontWeight: "bold" }}>
+                  🎉 NFT Berhasil dicetak ke dompet kamu!
+                </div>
+              ) : (
+                <button 
+                  onClick={handleMintNFT} 
+                  disabled={txLoading} // Tombol mati saat lagi proses loading
+                  style={{ padding: "12px 24px", backgroundColor: txLoading ? "#9ca3af" : "#6366f1", color: "white", borderRadius: "8px", cursor: txLoading ? "not-allowed" : "pointer", border: "none", fontWeight: "bold", fontSize: "1rem", marginTop: "10px", width: "100%" }}
+                >
+                  {txLoading ? "⌛ Memproses di Stellar..." : "Klaim NFT Sertifikat Sekarang"}
+                </button>
+              )}
+              
+              {/* Pesan error kalau gagal minting */}
+              {txError && <p style={{ color: "#dc2626", fontSize: "0.9rem", marginTop: "10px" }}>⚠ Gagal: {txError}</p>}
             </div>
           ) : (
             <div style={{ marginTop: "20px", padding: "15px", background: "#fef2f2", borderRadius: "8px", border: "1px solid #fecaca" }}>

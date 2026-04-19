@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Networks,
   BASE_FEE,
@@ -8,21 +8,77 @@ import {
   Keypair,
   Account,
   rpc,
-  Asset,
 } from "@stellar/stellar-sdk";
 import {
-  isConnected,
   getAddress,
+  isConnected,
   requestAccess,
   signTransaction,
 } from "@stellar/freighter-api";
 
+// Koneksi ke Soroban Testnet
 const RPC_URL = import.meta.env.VITE_RPC_URL || "https://soroban-testnet.stellar.org";
 const NETWORK = Networks.TESTNET;
 const server = new rpc.Server(RPC_URL);
 
+const getFreighter = () => {
+  if (typeof window === "undefined") return null;
+
+  // Check multiple possible global objects that Freighter might use
+  return window.freighter ||
+         window.freighterApi ||
+         window.stellar ||
+         (window.stellar && window.stellar.freighter) ||
+         null;
+};
+
+const normalizeAddress = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.address || value.publicKey || "";
+};
+
 export function useContract() {
-  const contract = new Contract(import.meta.env.VITE_CONTRACT_ID);
+  // Mencegah error jika ID kontrak belum ada di .env
+  const contractId = import.meta.env.VITE_CONTRACT_ID || "CAC...DUMMY";
+  const contract = useMemo(() => new Contract(contractId), [contractId]);
+
+  const getWalletAddress = useCallback(async (forceRequest = false) => {
+    const freighter = getFreighter();
+
+    if (freighter) {
+      try {
+        const direct =
+          typeof freighter.getAddress === "function"
+            ? await freighter.getAddress()
+            : typeof freighter.requestPublicKey === "function"
+            ? await freighter.requestPublicKey()
+            : typeof freighter.getPublicKey === "function"
+            ? await freighter.getPublicKey()
+            : null;
+
+        const address = normalizeAddress(direct);
+        if (address) {
+          return address;
+        }
+      } catch (err) {
+        console.warn("Freighter direct address fallback failed:", err);
+      }
+    }
+
+    if (forceRequest) {
+      const response = await requestAccess();
+      const address = normalizeAddress(response);
+      if (address) return address;
+      throw new Error(response?.error?.message || "Gagal mengambil Public Key.");
+    }
+
+    const response = await getAddress();
+    const address = normalizeAddress(response);
+    if (address) return address;
+    if (response?.error) throw new Error(response.error.message || "Gagal mengambil Public Key.");
+    return "";
+  }, []);
 
   const [publicKey, setPublicKey] = useState(null);
   const [walletLoading, setWalletLoading] = useState(false);
@@ -38,66 +94,98 @@ export function useContract() {
 
   const isWalletConnected = !!publicKey;
 
-  // Check Freighter on mount + poll every second to detect wallet changes
+  // -- DETEKSI DOMPET FREIGHTER (Diperbarui untuk API Terbaru) --
   useEffect(() => {
     async function check() {
       try {
-        const res = await isConnected();
-        setFreighterInstalled(!!res);
-        if (res?.isConnected && !manuallyDisconnected) {
-          const key = await getAddress();
-          if (key?.address) setPublicKey(key.address);
+        const freighter = getFreighter();
+        console.log("Freighter detection:", freighter ? "Found" : "Not found");
+
+        const connection = await isConnected();
+        const installed = !!(connection?.isConnected || freighter);
+        console.log("Freighter installed:", installed);
+
+        setFreighterInstalled(installed);
+
+        // Cek koneksi tanpa pop-up agresif
+        if (installed && !manuallyDisconnected) {
+          const address = await getWalletAddress(false);
+          if (address) setPublicKey(address);
         }
-      } catch {
+      } catch (error) {
+        console.error("Freighter check error:", error);
         setFreighterInstalled(false);
       }
     }
 
+    // Check immediately
     check();
 
+    // Polling setiap 2 detik supaya tidak terlalu membebani browser
     const interval = setInterval(async () => {
       try {
-        const res = await isConnected();
-        if (res?.isConnected && !manuallyDisconnected) {
-          const key = await getAddress();
-          if (key?.address) {
+        const freighter = getFreighter();
+        const connection = await isConnected();
+        const installed = !!(connection?.isConnected || freighter);
+        setFreighterInstalled(installed);
+
+        if (installed && !manuallyDisconnected) {
+          const address = await getWalletAddress(false);
+          if (address) {
             setPublicKey((prev) => {
-              if (prev !== key.address) return key.address;
+              if (prev !== address) return address;
               return prev;
             });
           }
-        } else if (!res?.isConnected) {
+        } else if (!installed) {
           setPublicKey(null);
         }
       } catch {
-        setPublicKey(null);
+        // Abaikan error polling
       }
-    }, 1000);
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [manuallyDisconnected]);
+  }, [manuallyDisconnected, getWalletAddress]);
 
-  // Connect wallet via Freighter
+  // -- FUNGSI CONNECT WALLET --
   const connectWallet = useCallback(async () => {
     setWalletLoading(true);
     setWalletError(null);
     localStorage.removeItem("wallet_disconnected");
     setManuallyDisconnected(false);
+
     try {
-      await requestAccess();
-      const key = await getAddress();
-      if (!key?.address) throw new Error("Failed to get public key");
-      setPublicKey(key.address);
-      return key.address;
+      // First check if Freighter is available
+      const freighter = getFreighter();
+      if (!freighter) {
+        // Try to check connection status first
+        const connection = await isConnected();
+        if (!connection?.isConnected) {
+          throw new Error("Freighter tidak terdeteksi. Pastikan ekstensi Freighter terpasang dan aktif, lalu refresh halaman.");
+        }
+      }
+
+      // Try to request access
+      const response = await requestAccess();
+      const address = normalizeAddress(response);
+
+      if (!address) {
+        throw new Error(response?.error?.message || "Gagal mengambil Public Key dari Freighter.");
+      }
+
+      setPublicKey(address);
+      return address;
     } catch (err) {
-      setWalletError(err.message);
+      console.error("Connect wallet error:", err);
+      setWalletError(err?.message || "Koneksi dibatalkan atau dompet terkunci.");
       throw err;
     } finally {
       setWalletLoading(false);
     }
   }, []);
 
-  // Disconnect wallet - clears local state and stops polling override
+  // -- FUNGSI DISCONNECT --
   const disconnectWallet = useCallback(() => {
     localStorage.setItem("wallet_disconnected", "true");
     setManuallyDisconnected(true);
@@ -107,7 +195,7 @@ export function useContract() {
     setTxSuccess(null);
   }, []);
 
-  // Get XLM balance of connected wallet
+  // -- CEK SALDO XLM --
   const getXLMBalance = useCallback(async (address) => {
     try {
       const response = await fetch(
@@ -117,26 +205,25 @@ export function useContract() {
       const balance = data.balances?.find((b) => b.asset_type === "native");
       return balance ? balance.balance : "0";
     } catch (err) {
-      console.error("getXLMBalance error:", err);
+      console.error("Error cek saldo XLM:", err);
       return "0";
     }
   }, [publicKey]);
 
   useEffect(() => {
-    if (publicKey) {
-      getXLMBalance(publicKey).then(setXlmBalance);
-    } else {
-      setXlmBalance(null);
-    }
-  }, [publicKey]);
+    const loadBalance = async () => {
+      if (publicKey) {
+        const balance = await getXLMBalance(publicKey);
+        setXlmBalance(balance);
+      } else {
+        setXlmBalance(null);
+      }
+    };
 
-  // Read data from contract (no wallet needed, no fees)
-  //
-  // Usage:
-  //   const notes = await readContract("get_notes")
-  //   const item  = await readContract("get_item", [
-  //     nativeToScVal(id, { type: "u64" })
-  //   ])
+    loadBalance();
+  }, [publicKey, getXLMBalance]);
+
+  // -- BACA KONTRAK (Tanpa Bayar Gas) --
   const readContract = useCallback(async (functionName, args = []) => {
     try {
       const keypair = Keypair.random();
@@ -155,23 +242,25 @@ export function useContract() {
 
       return scValToNative(result.result?.retval);
     } catch (err) {
-      console.error(`readContract(${functionName}) error:`, err);
+      console.error(`readContract error:`, err);
       throw err;
     }
-  }, []);
+  }, [contract]);
 
-  // Write data to contract (requires wallet, triggers Freighter popup)
-  //
-  // Usage:
-  //   await writeContract("create_note", [
-  //     nativeToScVal("Title",   { type: "string" }),
-  //     nativeToScVal("Content", { type: "string" }),
-  //   ])
-  //   await writeContract("delete_note", [
-  //     nativeToScVal(id, { type: "u64" })
-  //   ])
+  // -- MENUNGGU KONFIRMASI BLOCKCHAIN --
+  const waitConfirmation = async (hash, maxTry = 20) => {
+    for (let i = 0; i < maxTry; i++) {
+      const res = await server.getTransaction(hash);
+      if (res.status === "SUCCESS") return { success: true, hash };
+      if (res.status === "FAILED") throw new Error("Transaksi gagal: " + hash);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    throw new Error("Waktu tunggu konfirmasi habis.");
+  };
+
+  // -- TULIS KONTRAK (Muncul Pop-up Tanda Tangan, Bayar Gas) --
   const writeContract = useCallback(async (functionName, args = []) => {
-    if (!publicKey) throw new Error("Wallet not connected");
+    if (!publicKey) throw new Error("Dompet belum terkoneksi!");
     setTxLoading(true);
     setTxError(null);
     setTxSuccess(null);
@@ -194,11 +283,13 @@ export function useContract() {
         network: "TESTNET",
         networkPassphrase: NETWORK,
       });
+      
       if (signResult.error) throw new Error(signResult.error);
 
       const signedTx = TransactionBuilder.fromXDR(signResult.signedTxXdr, NETWORK);
       const submitResult = await server.sendTransaction(signedTx);
-      if (submitResult.status === "ERROR") throw new Error("Submit failed: " + submitResult.errorResult);
+      
+      if (submitResult.status === "ERROR") throw new Error("Gagal submit ke jaringan: " + submitResult.errorResult);
 
       const confirmation = await waitConfirmation(submitResult.hash);
       setTxSuccess(confirmation.hash);
@@ -209,18 +300,7 @@ export function useContract() {
     } finally {
       setTxLoading(false);
     }
-  }, [publicKey]);
-
-  // Poll for transaction confirmation
-  async function waitConfirmation(hash, maxTry = 20) {
-    for (let i = 0; i < maxTry; i++) {
-      const res = await server.getTransaction(hash);
-      if (res.status === "SUCCESS") return { success: true, hash };
-      if (res.status === "FAILED") throw new Error("Transaction failed: " + hash);
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-    throw new Error("Transaction confirmation timeout");
-  }
+  }, [publicKey, contract]);
 
   return {
     publicKey,

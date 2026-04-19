@@ -1,65 +1,65 @@
-# Stellar Notes DApp
+# Stellar EduCert DApp
 
-**Stellar Notes DApp** - Blockchain-Based Decentralized Note-Taking System
+**Stellar EduCert DApp** - Web-Based Chemistry Quiz and Decentralized Web3 Certification System
 
 ## Project Description
 
-Stellar Notes DApp is a decentralized smart contract solution built on the Stellar blockchain using Soroban SDK. It provides a secure, immutable platform for managing personal notes directly on the blockchain. The contract ensures that your data is stored transparently and is only manageable through predefined smart contract functions, eliminating reliance on centralized database providers.
+Stellar EduCert DApp is a decentralized smart contract solution built on the Stellar blockchain using Soroban SDK. It provides a secure, immutable platform for managing educational achievements. The system features a hybrid architecture: users take a chemistry quiz on the frontend with attempts securely recorded off-chain using Firebase. 
 
-The system allows users to create, view, and delete notes, leveraging the efficiency and security of the Stellar network. Each note is uniquely identified and stored within the contract's instance storage, ensuring data persistence and reliability.
+Upon achieving a passing score, the contract ensures that a permanent, verifiable NFT certificate is minted directly on the blockchain. Each certificate's visual assets and metadata are stored on Pinata (IPFS), ensuring data persistence, reliability, and eliminating reliance on centralized database providers for your credential assets.
 
 ## Project Vision
 
-Our vision is to revolutionize personal productivity in the digital age by:
+Our vision is to revolutionize educational credentialing in the digital age by:
 
-- **Decentralizing Data**: Moving note-taking from centralized servers to a global, distributed blockchain
-- **Ensuring Ownership**: Empowering users to have complete control and ownership over their digital thoughts and information
-- **Guaranteeing Immutability**: Providing a permanent, tamper-proof record of notes that cannot be altered or deleted by third parties
-- **Enhancing Privacy**: Leveraging blockchain security to protect personal information from unauthorized access
-- **Building Trustless Systems**: Creating a platform where data integrity is guaranteed by code, not by company promises
+- **Decentralizing Achievements**: Moving academic certificates from easily manipulated central servers to a global, distributed blockchain
+- **Ensuring Ownership**: Empowering students to have complete control and ownership over their digital credentials through Web3 wallets
+- **Guaranteeing Immutability**: Providing a permanent, tamper-proof record of passing the chemistry quiz that cannot be altered or deleted by third parties
+- **Hybrid Efficiency**: Leveraging Firebase for fast frontend interactions and Stellar for high-value certificate minting
+- **Building Trustless Systems**: Creating a platform where educational integrity is guaranteed by smart contract code
 
-We envision a future where digital information is truly personal and sovereign, empowering individuals with complete autonomy over their digital assets.
+We envision a future where digital educational information is truly personal and sovereign, empowering individuals with complete autonomy over their digital assets.
 
 ## Key Features
 
-### 1. **Simple Note Creation**
+### 1. **Automated Score Evaluation**
 
-- Create notes with just one function call
-- Specify title and content for each note
-- Automated ID generation for unique identification
-- Persistent storage on the Stellar blockchain
+- Take interactive chemistry quizzes directly on the web
+- Securely store user attempts and scores using Firebase
+- Automated eligibility checking before triggering any blockchain transactions
+- Seamless transition from learning to minting
 
-### 2. **Efficient Data Retrieval**
+### 2. **Blockchain Certificate Minting**
 
-- Fetch all stored notes in a single call
-- Structured data representation for easy frontend integration
-- Quick access to your entire note collection
-- Real-time synchronization with the blockchain state
+- Claim NFT certificates with just one function call upon passing
+- Persistent storage of the credential on the Stellar blockchain
+- Automated integration with connected Web3 wallets
+- Secure and fast transaction finality
 
-### 3. **Secure Deletion**
+### 3. **Decentralized Asset Storage**
 
-- Remove specific notes using their unique IDs
-- Permanent removal from the contract storage
-- Clean and efficient storage management
-- Immediate update of the note list after deletion
+- Certificate images are hosted via Pinata (IPFS)
+- Permanent asset links that cannot go offline
+- Clean integration between the Soroban contract and IPFS CIDs
+- Tamper-proof visual representation of achievements
 
 ### 4. **Transparency and Security**
 
-- View all note activities on the blockchain
-- Blockchain-based verification of all storage actions
-- Immutable records of note creation and deletion
-- Protected against unauthorized modifications
+- Fetch and view all earned certificates in a single call
+- Blockchain-based verification of all claimed NFTs
+- Immutable records of student accomplishments
+- Protected against unauthorized modifications or fake certificates
 
 ### 5. **Stellar Network Integration**
 
 - Leverages the high speed and low cost of Stellar
 - Built using the modern Soroban Smart Contract SDK
-- Scalable architecture for growing note collections
-- Interoperable with other Stellar-based services
+- Scalable architecture for growing educational platforms
+- Interoperable with other Stellar-based services and wallets
 
 ## Contract Details
 
-Contract Address: CAWLJENIINEZJFQFC5VCB6VNRVJGSXO2L7DORGXLDNVBKT26RRHTUQFJ
+Contract Address: CAKJABXDJCQZ7F73UOMBEJUMAVZOLUPSLG6TE5HH4F7AJAYUQTIPA2LA
   ![alt text](smartcontract.png)
 
 ## Frontend Preview
@@ -70,36 +70,36 @@ Contract Address: CAWLJENIINEZJFQFC5VCB6VNRVJGSXO2L7DORGXLDNVBKT26RRHTUQFJ
 
 ### Short-Term Enhancements
 
-1. **Note Encryption**: Support for end-to-end encryption of note content for enhanced privacy
-2. **Category Management**: Add tags and categories to organize notes efficiently
-3. **Rich Text Support**: Extend support beyond plain text to include Markdown and formatted content
-4. **Search Functionality**: Implement advanced search filters for large note collections
+1. **Dynamic Metadata**: Update IPFS metadata to include specific quiz metrics (time taken, score)
+2. **Leaderboard System**: Add a frontend ranking board utilizing Firebase data
+3. **Mobile Optimization**: Extend support for seamless mobile browser experiences
+4. **Enhanced UI/UX**: Implement advanced animations for the certificate claiming process
 
 ### Medium-Term Development
 
-5. **Collaborative Notes**: Implement multi-signature requirements for shared or collaborative note-taking
-   - Shared access for multiple addresses
-   - Permission-based editing and viewing
-   - Version history tracking
-6. **Notification System**: Off-chain bridge to alert users of new updates or shared notes
-7. **Asset Attachment**: Capability to attach digital assets or tokens to specific notes
-8. **Inter-Contract Integration**: Allow other smart contracts to interact with and store data in the notes contract
+5. **Multi-Subject Support**: Expand the contract to issue distinct NFTs for different subjects
+   - Distinct IPFS folders for Physics, Biology, etc.
+   - Subject-based metadata tags
+   - Specific quiz requirements for each category
+6. **Social Sharing System**: Bridge to easily share the verified NFT to LinkedIn or Twitter
+7. **Wallet-less Onboarding**: Implement account abstraction so students don't need to manage private keys manually
+8. **Inter-Contract Integration**: Allow other educational DApps to verify a student's certificate from this contract
 
 ### Long-Term Vision
 
-9. **Cross-Chain Synchronization**: Extend note storage to multiple blockchain networks
-10. **Decentralized UI Hosting**: Host the frontend on IPFS or similar decentralized platforms
-11. **AI-Powered Summarization**: Optional integration with AI to help users summarize their notes
-12. **Privacy Layers**: Implement zero-knowledge proofs for completely private note content
-13. **DAO Governance**: Community-driven protocol improvements and feature prioritization
-14. **Identity Management**: Integration with decentralized identity (DID) systems for user management
+9. **Cross-Chain Synchronization**: Extend credential storage to multiple blockchain networks
+10. **Decentralized UI Hosting**: Host the entire frontend application on IPFS
+11. **Learn-to-Earn**: Optional tokenized rewards for students who consistently achieve high scores
+12. **Privacy Layers**: Implement zero-knowledge proofs for private score verification
+13. **DAO Governance**: Community-driven educational curriculum improvements
+14. **Identity Management**: Integration with decentralized identity (DID) systems for student IDs
 
 ### Enterprise Features
 
-15. **Corporate Documentation**: Adapt the system for secure corporate record-keeping
-16. **Immutable Logging**: Create time-locked logs for audit purposes
-17. **Automated Reporting**: Automatic note triggers for periodic reporting
-18. **Multi-Language Support**: Expand accessibility with internationalization
+15. **Institutional Verification**: Adapt the system for schools to run their own nodes and verify credentials
+16. **Immutable Auditing**: Create time-locked logs for academic audit purposes
+17. **Automated Reporting**: Automatic triggers for periodic school performance reporting
+18. **Multi-Language Support**: Expand accessibility for international students
 
 ---
 
@@ -108,15 +108,17 @@ Contract Address: CAWLJENIINEZJFQFC5VCB6VNRVJGSXO2L7DORGXLDNVBKT26RRHTUQFJ
 - Soroban SDK
 - Rust programming language
 - Stellar blockchain network
+- Firebase (Cloud Firestore)
+- Pinata IPFS
+- Node.js & React/Vite
 
 ## Getting Started
 
-Deploy the smart contract to Stellar's Soroban network and interact with it using the three main functions:
+Deploy the smart contract to Stellar's Soroban network and interact with it using the main functions:
 
-- `create_note()` - Create a new note with a title and content
-- `get_notes()` - Retrieve all stored notes from the contract
-- `delete_note()` - Remove a specific note by its ID
+- `claim_certificate()` - Mint a new NFT certificate and bind the IPFS CID to your wallet upon passing
+- `get_all_certificates()` - Retrieve all earned certificates from the contract
 
 ---
 
-**Stellar Notes DApp** - Securing Your Thoughts on the Blockchain
+**Stellar EduCert DApp** - Securing Educational Achievements on the Blockchain

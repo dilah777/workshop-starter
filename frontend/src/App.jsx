@@ -1,7 +1,6 @@
 import { useContract } from "./hooks/useContract";
-import Quiz from "./Quiz"; // Memanggil file Quiz yang baru dibuat
+import Quiz from "./Quiz";
 
-// - Styles --------------------------
 const s = {
   app: { maxWidth: 600, margin: "0 auto", padding: "2rem 1.5rem", fontFamily: "system-ui, sans-serif" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem", paddingBottom: "1rem", borderBottom: "1px solid #e5e7eb" },
@@ -17,24 +16,25 @@ const s = {
 };
 
 export default function App() {
-  // - Hook - mengambil status dompet pengguna ---
   const {
     publicKey,
     isWalletConnected,
+    freighterInstalled,
     walletLoading,
     walletError,
     connectWallet,
     disconnectWallet,
     xlmBalance,
+    writeContract,
+    txLoading,
+    txError,
+    txSuccess,
   } = useContract();
 
-  // - UI ---------------------------
   return (
     <div style={s.app}>
-
-      {/* Header Aplikasi */}
       <div style={s.header}>
-        <h1 style={s.title}>Edu-DApp Kimia</h1> {/* Nama disesuaikan dengan skripsi kamu */}
+        <h1 style={s.title}>Edu-DApp Kimia</h1>
 
         {isWalletConnected ? (
           <div style={s.walletInfo}>
@@ -59,23 +59,50 @@ export default function App() {
         )}
       </div>
 
-      {/* Menampilkan pesan error jika dompet gagal konek */}
       {walletError && <p style={s.error}>⚠ {walletError}</p>}
 
-      {/* LOGIKA UTAMA: Jika dompet konek = Muncul Kuis, Jika tidak = Muncul Pesan */}
       {isWalletConnected ? (
-        // Mengirimkan alamat dompet (publicKey) ke komponen Quiz
-        <Quiz userAddress={publicKey} />
+        <Quiz 
+          userAddress={publicKey} 
+          writeContract={writeContract}
+          txLoading={txLoading}
+          txError={txError}
+          txSuccess={txSuccess}
+        />
       ) : (
         <div style={s.welcomeMsg}>
           <h2 style={{marginTop: 0, color: "#334155"}}>Selamat Datang, Praktisi!</h2>
           <p style={{color: "#64748b", lineHeight: 1.6}}>
-            Silakan hubungkan dompet Freighter kamu di pojok kanan atas untuk memulai Uji Kompetensi Kimia & Web3. 
-            Raih skor minimal 3 untuk mengklaim Sertifikat NFT!
+            {freighterInstalled
+              ? "Silakan hubungkan dompet Freighter kamu di pojok kanan atas untuk memulai Uji Kompetensi Kimia & Web3. Raih skor minimal 3 untuk mengklaim Sertifikat NFT!"
+              : "Freighter wallet belum terdeteksi. Silakan install ekstensi Freighter dari Chrome Web Store, lalu refresh halaman ini."}
           </p>
+          {!freighterInstalled && (
+            <div style={{marginTop: "1rem"}}>
+              <p style={{color: "#475569", fontSize: "0.95rem", marginBottom: "0.5rem"}}>
+                <strong>Langkah install:</strong>
+              </p>
+              <ol style={{color: "#475569", fontSize: "0.9rem", paddingLeft: "1.5rem", lineHeight: 1.5}}>
+                <li>Buka <a href="https://chromewebstore.google.com/detail/freighter-wallet/jfokfkmochbopcbpmkdcmemhpjpbgigo" target="_blank" rel="noreferrer" style={{color: "#4f46e5", textDecoration: "underline"}}>Chrome Web Store</a></li>
+                <li>Cari dan install "Freighter Wallet"</li>
+                <li>Refresh halaman ini setelah install</li>
+                <li>Klik "Connect Wallet" untuk mulai</li>
+              </ol>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  ...s.btnOutline,
+                  marginTop: "1rem",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db"
+                }}
+              >
+                🔄 Refresh Halaman
+              </button>
+            </div>
+          )}
         </div>
       )}
-
     </div>
   );
 }
